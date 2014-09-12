@@ -232,7 +232,7 @@ and the output JSON will be:
 {
   "friends": [
     {
-      name: "John Smith"
+      "name": "John Smith"
     }
   ]
 }
