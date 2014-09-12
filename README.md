@@ -321,16 +321,17 @@ Notice that two objects `meta!` got merged.
 
 ### Conditions
 
-Simply you can use `if` or `unless` statement inside the block:
+Take the current object as a second block parameter,
+simply you can use `if` or `unless` statement with it inside:
 
 ```ruby
-t[].people! { |person|
-  unless person.private_member?
+t[].people! { |person, person_obj|
+  unless person_obj.private_member?
     person.name
     person.age
   end
 
-  person.cv if person.looking_for_job?
+  person.cv if person_obj.looking_for_job?
 }
 ```
 
