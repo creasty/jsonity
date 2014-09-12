@@ -157,7 +157,7 @@ t.user! { |user|
 
 If `@user.avatar = nil`, the output will be like this:
 
-```javascipt
+```javascript
 {
   "user": {
     "name": "John Smith",
@@ -186,7 +186,7 @@ t.user! { |user|
 
 and the output will be:
 
-```javascipt
+```javascript
 {
   "user": {
     "name": "John Smith",
@@ -228,7 +228,7 @@ t[].friends! { |friend|
 
 and the output JSON will be:
 
-```javascipt
+```javascript
 {
   "friends": [
     {
@@ -323,7 +323,7 @@ Notice that two objects `meta!` got merged.
 
 Simply you can use `if` or `unless` statement inside the block:
 
-```
+```ruby
 t[].people! { |person|
   unless person.private_member?
     person.name
