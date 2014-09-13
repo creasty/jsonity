@@ -7,7 +7,7 @@ I'd been writing JSON API with [Jbuilder](https://github.com/rails/jbuilder), [R
 
 - Jbuilder is very verbose in syntax, and its functonalities of partial and mixin are actually weak
 - RABL has simple syntax, but writing complex data structure with it is not very readable
-- ActiveModel::Serializer is persuasive role in Rails architecture, but can get very useless when you need to fully control what attributes of nested (associated) object to be included from controller
+- ActiveModel::Serializer is persuasive role in Rails architecture, but can get very useless when you need to fully control from controller what attributes of nested (associated) object to be included
 
 So I chose to create new one -- Jsonity, which is simple and powerful JSON builder especially for JSON API representations.
 
