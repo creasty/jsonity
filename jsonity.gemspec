@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Jsonity::VERSION
   spec.authors       = ['Yuki Iwanaga']
   spec.email         = ['yuki@creasty.com']
-  spec.summary       = 'The most natural language for building JSON in Ruby'
-  spec.description   = 'The most natural language for building JSON in Ruby'
+  spec.summary       = 'The most sexy language for building JSON in Ruby'
+  spec.description   = 'The most sexy language for building JSON in Ruby'
   spec.homepage      = 'https://github.com/creasty/jsonity'
   spec.license       = 'MIT'
 

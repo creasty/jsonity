@@ -1,7 +1,7 @@
 Jsonity
 =======
 
-**The most natural language for building JSON in Ruby**
+**The most sexy language for building JSON in Ruby**
 
 I'd been writing JSON API with [Jbuilder](https://github.com/rails/jbuilder), [RABL](https://github.com/nesquena/rabl) and [ActiveModel::Serializer](https://github.com/rails-api/active_model_serializers), but nothing of them meet my requirement and use case.
 
