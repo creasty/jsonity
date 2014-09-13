@@ -5,7 +5,7 @@ Jsonity
 
 I'd been writing JSON API with [Jbuilder](https://github.com/rails/jbuilder), [RABL](https://github.com/nesquena/rabl) and [ActiveModel::Serializer](https://github.com/rails-api/active_model_serializers), but nothing of them meet my requirement and use case.
 
-- Jbuilder is very verbose in syntax, functonalities of partial and mixin are actually weak
+- Jbuilder is very verbose in syntax, and its functonalities of partial and mixin are actually weak
 - RABL has simple syntax, but writing complex data structure with it is not very readable
 - ActiveModel::Serializer is persuasive role in Rails architecture, but can get very useless when you need to fully control what attributes of nested (associated) object to be included from controller
 
@@ -23,7 +23,7 @@ Installation
 Make sure to add the gem to your Gemfile.
 
 ```ruby
-gem 'neo_json'
+gem 'jsonity'
 ```
 
 
@@ -32,7 +32,7 @@ Overview
 
 ```ruby
 @meta_pagination_mixin = ->(t) {
-  t.meta!(inherit: true) { |meta|
+  t.meta! { |meta|
     meta.total_pages
     meta.current_page
   }
