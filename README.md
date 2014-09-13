@@ -8,7 +8,7 @@ Overview
 --------
 
 ```ruby
-@meta_pagination = ->(t) {
+@meta_pagination_mixin = ->(t) {
   t.meta!(inherit: true) { |meta|
     meta.total_pages
     meta.current_page
@@ -16,9 +16,7 @@ Overview
 }
 
 Jsonity.build { |t|
-  t <= @users
-
-  t[].users!(inherit: true) { |user|
+  t[].users!(@users) { |user|
     user.id
     user.age
     user.full_name { |u| [u.first_name, u.last_name].join ' ' }
@@ -28,40 +26,32 @@ Jsonity.build { |t|
     }
   }
 
-  t.(&@meta_pagination)
+  t.(@users, &@meta_pagination_mixin)
 }
-#=> {
-#     "users": [
-#       {
-#         "id": 1,
-#         "age": 21,
-#         "full_name": "John Smith",
-#         "avatar": {
-#           "image_url": "http://example.com/john.png"
-#         }
-#       },
-#       {
-#         "id": 2,
-#         "age": 37,
-#         "full_name": "William Northington",
-#         "avatar": {
-#           "image_url": "http://example.com/william.png"
-#         }
-#       },
-#       {
-#         "id": 3,
-#         "age": 29,
-#         "full_name": "Samuel Miller",
-#         "avatar": {
-#           "image_url": "http://example.com/samuel.png"
-#         }
-#       }
-#     ],
-#     "meta": {
-#       "total_pages": 1,
-#       "current_page": 1
-#     }
-#   }
+=begin
+{
+  "users": [
+    {
+      "id": 1,
+      "age": 21,
+      "full_name": "John Smith",
+      "avatar": {
+        "image_url": "http://example.com/john.png"
+      }
+    },
+    {
+      "id": 2,
+      "age": 37,
+      "full_name": "William Northington",
+      "avatar": null
+    }
+  ],
+  "meta": {
+    "total_pages": 1,
+    "current_page": 1
+  }
+}
+=end
 ```
 
 
@@ -74,69 +64,81 @@ Make sure to add the gem to your Gemfile.
 gem 'neo_json'
 ```
 
-Start writing object:
-
-```ruby
-Jsonity.build { |t|
-  # ...
-}
-```
-
 ### Object assignment
 
 To declare the data object for use:
 
 ```ruby
-t <= @user
+Jsonity.build { |t|
+  t <= @user
+  # ...
+}
 ```
+
+Or pass as an argument:
+
+```ruby
+Jsonity.build(@user) { |user|
+  # ...
+}
+```
+
 
 ### Attribute nodes
 
 Basic usage of defining simple attributes:
 
 ```ruby
-t.id   # @user.id
-t.age  # @user.age
+Jsonity.build(@user) { |user|
+  user.id   # @user.id
+  user.age  # @user.age
+}
+=begin
+{
+  "id": 123,
+  "age": 27
+}
+=end
 ```
  
 Or you can use custom attributes in flexible ways:
 
 ```ruby
-t.full_name { |u| [u.first_name, u.last_name].join ' ' }  # u = @user
-t.russian_roulette { rand(1..10) }                        # block parameter isn't required
-t.with_object(Time) { |t| t.now }                         # now, t = Time
-t.seventeen 17                                            # block can be omitted
+Jsonity.build(@user) { |user|
+  # create full_name from @user.first_name and @user.last_name
+  user.full_name { |u| [u.first_name, u.last_name].join ' ' }
+
+  # block parameter isn't required
+  user.russian_roulette { rand(1..10) }
+
+  # or with specified object
+  user.feature_time(Time.now) { |now| now + 1.years }
+
+  # block can be omitted if the value is constant
+  user.seventeen 17
+}
+=begin
+{
+  "full_name": "John Smith",
+  "russian_roulette": 4,
+  "feature_time": "2015-09-13 12:32:39 +0900",
+  "seventeen": 17
+}
+=end
 ```
 
 Aliased attributes works well as you expected:
  
 ```ruby
-# show `id` as `my_id`
-t.my_id &:id
-```
-
-### Automatic attributes inclusion
-
-If you set `attr_json` in any class, the specified attributes will automatically be included:
-
-```ruby
-class Sample < Struct.new(:id, :foo)
-  attr_json :id, :foo
-end
-
-@sample = Sample.new 123, 'foo!'
-
-Jsonity.build { |t|
-  t.sample!(@sample) { |t|
-    # leave empty inside
-  }
+Jsonity.build(@user) { |user|
+  # show `id` as `my_id`
+  user.my_id &:id
 }
-#=> {
-#     "sample": {
-#       "id": 123,
-#       "foo": "foo!"
-#     }
-#   }
+=begin
+{
+  "my_id": 123
+}
+=end
 ```
 
 ### Hash nodes
@@ -144,7 +146,7 @@ Jsonity.build { |t|
 With name suffixed with `!`, nested object can be included:
 
 ```ruby
-t.user! { |user|
+Jsonity.build(@user) { |user|
   user.name  # @user.name
 
   user.avatar! { |avatar|
@@ -153,89 +155,152 @@ t.user! { |user|
     avatar.height     # @user.avatar.height
   }
 }
-```
+=begin
+Assume that `@user.avatar` is `nil`,
 
-If `@user.avatar = nil`, the output will be like this:
-
-```javascript
 {
-  "user": {
-    "name": "John Smith",
-    "avatar": {
-      "image_url": null,
-      "width": null,
-      "height": null
-    }
+  "name": "John Smith",
+  "avatar": {
+    "image_url": null,
+    "width": null,
+    "height": null
   }
 }
+=end
 ```
 
 On the other hand, use `?` as suffix, the whole object become `null`:
 
 ```ruby
-t.user! { |user|
+Jsonity.build(@user) { |user|
   user.name
 
-  user.avatar? { |avatar|
+  user.avatar? { |avatar|  # <-- look, prefix is `?`
     avatar.image_url
     avatar.width
     avatar.height
   }
 }
-```
+=begin
+Assume that `@user.avatar` is `nil`,
 
-and the output will be:
-
-```javascript
 {
-  "user": {
-    "name": "John Smith",
-    "avatar": null
-  }
+  "name": "John Smith",
+  "avatar": null
 }
+=end
 ```
 
 Explicitly set an object to use inside a block:
 
 ```ruby
-t.home?(@user.hometown_address) { |home|
-  home.street  # @user.hometown_address.street
-  home.zip
-  home.city
-  home.state
+Jsonity.build { |t|
+  t.home!(@user.hometown_address) { |home|
+    home.street  # @user.hometown_address.street
+    home.zip
+    home.city
+    home.state
+  }
 }
+=begin
+{
+  "home": {
+    "street": "4611 Armbrester Drive",
+    "zip": "90017",
+    "city": "Los Angeles",
+    "state": "CA"
+  }
+}
+=end
 ```
 
 Or blocks can inherit the parent object:
 
 ```ruby
-t.user! { |user|
-  t.my!(inherit: true) { |my|
-    my.name  # @user.name
+Jsonity.build { |t|
+  t.user!(@user) { |user|
+    t.profile!(inherit: true) { |profile|
+      profile.name  # @user.name
+    }
   }
 }
+=begin
+{
+  "user": {
+    "profile": {
+      "name": "John Smith"
+    }
+  }
+}
+=end
 ```
+
+### Automatic attributes inclusion
+
+If you set `attr_json` in any class, **the specified attributes will automatically be included**:
+
+```ruby
+class Sample < Struct.new(:id, :foo, :bar)
+  attr_json :id, :foo
+end
+
+@sample = Sample.new 123, 'foo!', 'bar!!'
+```
+
+and then,
+
+```ruby
+Jsonity.build { |t|
+  t.sample! @sample
+}
+=begin
+{
+  "sample": {
+    "id": 123,
+    "foo": "foo!"
+  }
+}
+=end
+```
+
+Still you can create any kinds of nodes with a block:
+
+```ruby
+Jsonity.build { |t|
+  t.sample!(@sample) { |sample|
+    sample.bar { |bar| "this is #{bar}" }
+  }
+}
+=begin
+{
+  "sample": {
+    "id": 123,
+    "foo": "foo!",
+    "bar": "this is bar!!"
+  }
+}
+=end
+```
+
 
 ### Array nodes
 
-Including a collection of objects, just use `t[]` and write the same syntax of hash node:
+Including a collection of objects, just use `[]` and write the same syntax of hash node:
 
 ```ruby
-t[].friends! { |friend|
-  friend.name
+Jsonity.build(@user) { |user|
+  user[].friends! { |friend|
+    friend.name  # @user.friends[i].name
+  }
 }
-```
-
-and the output JSON will be:
-
-```javascript
+=begin
 {
   "friends": [
-    {
-      "name": "John Smith"
-    }
+    { "name": "John Smith" },
+    { "name": "William Northington" }
   ]
 }
+=end
 ```
 
 Similar to hash nodes in naming convention,  
@@ -246,10 +311,10 @@ Also passing the object or inheritance can be done in the same way as hash nodes
 
 ### Mixin / Scope
 
-Since Jsonity aim to be simple and light, use plain `Proc` to fullfill functonality of mixin.
+Since Jsonity aim to be simple and light, **use plain `Proc`** to fullfill functonality of mixin.
 
 ```ruby
-timestamp_mixin = ->(t) {
+@timestamps_mixin = ->(t) {
   t.created_at
   t.updated_at
 }
@@ -258,29 +323,54 @@ timestamp_mixin = ->(t) {
 and then,
 
 ```ruby
-t.user! { |user|
-  user.(&timestamp_mixin)
+Jsonity.build { |t|
+  t.user!(@user) { |user|
+    user.(&@timestamps_mixin)
+  }
 }
+=begin
+{
+  "user": {
+    "created_at": "2014-09-10 10:41:07 +0900",
+    "updated_at": "2014-09-13 12:55:56 +0900"
+  }
+}
+=end
 ```
 
-In case you might use different object in mixin, you can pass the object in the first argument:
+In case you might explicitly **specify an object to use** in mixin, you can do by passing it in the first argument:
 
 ```ruby
-t.(@other_user, &timestamps)
+Jsonity.build { |t|
+  t.(@user, &@timestamps_mixin)
+}
+=begin
+{
+  "created_at": "2014-09-10 10:41:07 +0900",
+  "updated_at": "2014-09-13 12:55:56 +0900"
+}
+=end
 ```
 
-So you take this functonality for scope:
+So you take this functonality for **scope**:
 
 ```ruby
-t.(@other_user) { |other_user|
-  other_user.name
+Jsonity.build { |t|
+  t.(@user) { |user|
+    user.name
+  }
 }
+=begin
+{
+  "name": "John Smith"
+}
+=end
 ```
 
 #### Mixining nested object and merging
 
 ```ruby
-meta_pagination_mixin = ->(t) {
+@meta_pagination_mixin = ->(t) {
   t.meta! { |meta|
     meta.total_pages
     meta.current_page
@@ -291,47 +381,41 @@ meta_pagination_mixin = ->(t) {
 and use this mixin like:
 
 ```ruby
-t[].people!(@people) { |person|
-  # ...
+Jsonity.build { |t|
+  t.(@people, &@meta_pagination_mixin)
+
+  t.meta! { |meta|
+    meta.total_count @people.count
+  }
 }
+=begin
+Notice that two objects `meta!` got merged.
 
-t.(@people, &meta_pagination_mixin)
-
-t.meta! { |meta|
-  meta.total_count @people.count
-}
-```
-
-the output become:
-
-```javascript
 {
-  "people": [
-    // ...
-  ],
   "meta": {
     "total_pages": 5,
     "current_page": 1,
     "total_count": 123
   }
 }
+=end
 ```
 
-Notice that two objects `meta!` got merged.
 
-### Conditions
+### Using object
 
-Take the current object as a second block parameter,
-simply you can use `if` or `unless` statement with it inside:
+You can get the current object as a second block parameter.
 
 ```ruby
-t[].people! { |person, person_obj|
-  unless person_obj.private_member?
-    person.name
-    person.age
-  end
+Jsonity.build { |t|
+  t[].people!(@people) { |person, person_obj|
+    unless person_obj.private_member?
+      person.name
+      person.age
+    end
 
-  person.cv if person_obj.looking_for_job?
+    person.cv if person_obj.looking_for_job?
+  }
 }
 ```
 
@@ -339,7 +423,7 @@ t[].people! { |person, person_obj|
 With Rails
 ----------
 
-Helper method is available for rendering with Jsonity:
+Helper method is available in controller for rendering with Jsonity:
 
 ```ruby
 render_json(status: :ok) { |t|
