@@ -1,8 +1,11 @@
 module ActionController
   class Base
 
-    def render_json(options = {}, &block)
-      json = Jsonity::Builder.build &block
+    protected
+
+    def render_json(*args, &block)
+      options = args.extract_options!
+      json = Jsonity::Builder.build args[0], &block
       options[:json] = json
       render options
     end

@@ -1,5 +1,3 @@
-require 'set'
-
 module Jsonity
   class Builder < BasicObject
 
@@ -32,6 +30,7 @@ module Jsonity
     ###
     def initialize(object, content)
       @object, @content = object, content
+      @deferred_array_blocks = {}
     end
 
     ###
@@ -42,7 +41,7 @@ module Jsonity
     end
 
     ###
-    # Make array context
+    # Create array context
     #
     # @return {Jsonity::Builder} - `self`
     ###
@@ -74,7 +73,7 @@ module Jsonity
     def method_missing(name, *args, &block)
       name = name.to_s
       is_object = name.match OBJECT_SUFFIX
-      name = name[0..-2] if is_object
+      name, is_object = name[0..-2], is_object[0] if is_object
 
       options = args.last.is_a?(::Hash) ? args.pop : {}
       options[:_object] = args[0]
@@ -105,6 +104,7 @@ module Jsonity
     # @return {Hash | nil}
     ###
     def content
+      evaluate_array_blocks!
       @content
     end
 
@@ -148,24 +148,49 @@ module Jsonity
     # @block
     ###
     def array(name, options, &block)
+      ::Kernel.raise RequiredBlockError.new('No block') unless block
+
+      if (deferred = @deferred_array_blocks[name])
+        deferred[:blocks] << block
+        return
+      end
+
       obj = get_object_for name, options
 
       is_array = obj && obj.class < ::Enumerable
 
       if !is_array && options[:_nullable]
         @content[name] ||= nil
-        return
+      else
+        @content[name] = [] unless @content[name].is_a?(::Array)
       end
-
-      @content[name] = [] unless @content[name].is_a?(::Array)
-      ary = @content[name]
 
       if is_array
-        obj.each.with_index do |a, i|
-          # TODO: deferred build so that can be merged correctly with conditional nodes
-          ary[i] = Builder.build a, ary[i], &block
+        @deferred_array_blocks[name] = {
+          obj: obj,
+          blocks: [block],
+        }
+      end
+    end
+
+    ###
+    # Evaluate all deferred blocks of array nodes,
+    # and reset block stack
+    ###
+    def evaluate_array_blocks!
+      @deferred_array_blocks.each do |name, d|
+        next unless d[:obj]
+
+        ary = @content[name]
+
+        d[:obj].each.with_index do |a, i|
+          d[:blocks].each do |block|
+            ary[i] = Builder.build a, ary[i], &block
+          end
         end
       end
+
+      @deferred_array_blocks = {}
     end
 
     ###
