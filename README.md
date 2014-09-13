@@ -191,7 +191,7 @@ Assume that `@user.avatar` is `nil`,
 =end
 ```
 
-Explicitly set an object to use inside a block:
+Explicitly specify an object to use inside a block:
 
 ```ruby
 Jsonity.build { |t|
@@ -214,7 +214,7 @@ Jsonity.build { |t|
 =end
 ```
 
-Or blocks can inherit the parent object:
+Or a block can inherit the parent object:
 
 ```ruby
 Jsonity.build { |t|
