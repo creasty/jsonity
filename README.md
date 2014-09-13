@@ -3,6 +3,29 @@ Jsonity
 
 **The most natural language for building JSON in Ruby**
 
+I'd been writing JSON API with [Jbuilder](https://github.com/rails/jbuilder), [RABL](https://github.com/nesquena/rabl) and [ActiveModel::Serializer](https://github.com/rails-api/active_model_serializers), but nothing of them meet my requirement and use case.
+
+- Jbuilder is very verbose in syntax, functonalities of partial and mixin are actually weak
+- RABL has simple syntax, but writing complex data structure with it is not very readable
+- ActiveModel::Serializer is persuasive role in Rails architecture, but can get very useless when you need to fully control what attributes of nested (associated) object to be included from controller
+
+So I chose to create new one -- Jsonity, which is simple and powerful JSON builder especially for JSON API representations.
+
+- Simple and readable syntax even if it gets complex
+- Flexible and arbitrary nodes
+- Includable mixin
+- Declarative attributes inclusion
+
+
+Installation
+------------
+
+Make sure to add the gem to your Gemfile.
+
+```ruby
+gem 'neo_json'
+```
+
 
 Overview
 --------
@@ -57,12 +80,6 @@ Jsonity.build { |t|
 
 Usage
 -----
-
-Make sure to add the gem to your Gemfile.
-
-```ruby
-gem 'neo_json'
-```
 
 ### Object assignment
 
