@@ -7,7 +7,7 @@ I'd been writing JSON API with [Jbuilder](https://github.com/rails/jbuilder), [R
 
 - Jbuilder is very verbose in syntax, and its functonalities of partial and mixin are actually weak
 - RABL has simple syntax, but writing complex data structure with it is not very readable
-- ActiveModel::Serializer is persuasive role in Rails architecture, but can get very useless when you need to fully control from controller what attributes of nested (associated) object to be included
+- ActiveModel::Serializer is persuasive role in Rails architecture, but can get very useless when you need to fully control from controller what attributes of multi-nested (associated) object to be included
 
 So I chose to create new one -- Jsonity, which is simple and powerful JSON builder especially for JSON API representations.
 
@@ -81,7 +81,7 @@ Jsonity.build { |t|
 Usage
 -----
 
-### Object assignment
+### Data object assignment
 
 To declare the data object for use:
 
@@ -92,7 +92,7 @@ Jsonity.build { |t|
 }
 ```
 
-Or pass as an argument:
+Or passing as an argument:
 
 ```ruby
 Jsonity.build(@user) { |user|
@@ -128,8 +128,8 @@ Jsonity.build(@user) { |user|
   # block parameter isn't required
   user.russian_roulette { rand(1..10) }
 
-  # or with specified object
-  user.feature_time(Time.now) { |now| now + 1.years }
+  # or with specified the data object
+  user.hello('world') { |w| w.upcase }
 
   # block can be omitted if the value is constant
   user.seventeen 17
@@ -138,7 +138,7 @@ Jsonity.build(@user) { |user|
 {
   "full_name": "John Smith",
   "russian_roulette": 4,
-  "feature_time": "2015-09-13 12:32:39 +0900",
+  "hello": "WORLD",
   "seventeen": 17
 }
 =end
@@ -148,7 +148,6 @@ Aliased attributes works well as you expected:
  
 ```ruby
 Jsonity.build(@user) { |user|
-  # show `id` as `my_id`
   user.my_id &:id
 }
 =begin
@@ -173,8 +172,21 @@ Jsonity.build(@user) { |user|
   }
 }
 =begin
-Assume that `@user.avatar` is `nil`,
+{
+  "name": "John Smith",
+  "avatar": {
+    "image_url": "http://www.example.com/avatar.png",
+    "width": 512,
+    "height": 512
+  }
+}
+=end
+```
 
+Assume that `@user.avatar` is `nil`, the output will be:
+
+```ruby
+=begin
 {
   "name": "John Smith",
   "avatar": {
@@ -208,7 +220,7 @@ Assume that `@user.avatar` is `nil`,
 =end
 ```
 
-Explicitly specify an object to use inside a block:
+To specify the data object to use inside a block:
 
 ```ruby
 Jsonity.build { |t|
@@ -231,12 +243,12 @@ Jsonity.build { |t|
 =end
 ```
 
-Or a block can inherit the parent object:
+Or a block can inherit the parent data object:
 
 ```ruby
 Jsonity.build { |t|
   t.user!(@user) { |user|
-    t.profile!(inherit: true) { |profile|
+    user.profile!(inherit: true) { |profile|
       profile.name  # @user.name
     }
   }
@@ -251,6 +263,31 @@ Jsonity.build { |t|
 }
 =end
 ```
+
+### Array nodes
+
+Including a collection of objects, just use `[]` and write the same syntax of hash node:
+
+```ruby
+Jsonity.build(@user) { |user|
+  user[].friends! { |friend|
+    friend.name  # @user.friends[i].name
+  }
+}
+=begin
+{
+  "friends": [
+    { "name": "John Smith" },
+    { "name": "William Northington" }
+  ]
+}
+=end
+```
+
+Similar to hash nodes in naming convention,  
+if `@user.friends = nil` nodes suffix with `!` will be an empty array `[]`, in contrast, some with `?` will be `null`.
+
+Also passing the data object or inheritance can be done in the same way as hash nodes.
 
 ### Automatic attributes inclusion
 
@@ -299,33 +336,6 @@ Jsonity.build { |t|
 =end
 ```
 
-
-### Array nodes
-
-Including a collection of objects, just use `[]` and write the same syntax of hash node:
-
-```ruby
-Jsonity.build(@user) { |user|
-  user[].friends! { |friend|
-    friend.name  # @user.friends[i].name
-  }
-}
-=begin
-{
-  "friends": [
-    { "name": "John Smith" },
-    { "name": "William Northington" }
-  ]
-}
-=end
-```
-
-Similar to hash nodes in naming convention,  
-if `@user.friends = nil` nodes suffix with `!` will be an empty array `[]`, in contrast, some with `?` will be `null`.
-
-Also passing the object or inheritance can be done in the same way as hash nodes.
-
-
 ### Mixin / Scope
 
 Since Jsonity aim to be simple and light, **use plain `Proc`** to fullfill functonality of mixin.
@@ -355,7 +365,7 @@ Jsonity.build { |t|
 =end
 ```
 
-In case you might explicitly **specify an object to use** in mixin, you can do by passing it in the first argument:
+To explicitly **specify the data object to use** in mixin, you can do by passing it in the first argument:
 
 ```ruby
 Jsonity.build { |t|
@@ -369,7 +379,7 @@ Jsonity.build { |t|
 =end
 ```
 
-So you take this functonality for **scope**:
+So you can take this functonality for **scope**:
 
 ```ruby
 Jsonity.build { |t|
@@ -419,9 +429,9 @@ Notice that two objects `meta!` got merged.
 ```
 
 
-### Using object
+### Using data object
 
-You can get the current object as a second block parameter.
+You can get the data object as a second block parameter.
 
 ```ruby
 Jsonity.build { |t|
