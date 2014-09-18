@@ -157,17 +157,15 @@ module Jsonity
 
       obj = get_object_for name, options
 
-      is_array = obj && obj.class < ::Enumerable
-
-      if !is_array && options[:_nullable]
+      if !obj && options[:_nullable]
         @content[name] ||= nil
       else
         @content[name] = [] unless @content[name].is_a?(::Array)
       end
 
-      if is_array
+      if obj
         @deferred_array_blocks[name] = {
-          obj: obj,
+          obj:    obj.to_a,
           blocks: [block],
         }
       end
