@@ -164,6 +164,7 @@ module Jsonity
       end
 
       if obj
+        block ||= ->(t) {}
         @deferred_array_blocks[name] = {
           obj:    obj.to_a,
           blocks: [block],
