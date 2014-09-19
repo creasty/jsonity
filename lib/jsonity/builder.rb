@@ -122,7 +122,8 @@ module Jsonity
     def attribute(name, options, &block)
       obj = get_object_for name, options
 
-      @content[name] = block ? block_call(block, options[:_object] || @object) : obj
+      value = block ? block_call(block, options[:_object] || @object) : obj
+      @content[name] = Formatter.format value, name
     end
 
     ###

@@ -1,5 +1,6 @@
 require 'forwardable'
 require 'jsonity/version'
+require 'jsonity/formatter'
 require 'jsonity/builder'
 require 'jsonity/core_ext'
 require 'jsonity/rails' if defined? Rails
