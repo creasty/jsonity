@@ -155,6 +155,8 @@ module Jsonity
     def array(name, options, &block)
       ::Kernel.raise RequiredBlockError.new('No block') unless block
 
+      block ||= ->(t) {}
+
       if (deferred = @deferred_array_blocks[name])
         deferred[:blocks] << block
         return
@@ -169,7 +171,6 @@ module Jsonity
       end
 
       if obj
-        block ||= ->(t) {}
         @deferred_array_blocks[name] = {
           obj:    obj.to_a,
           blocks: [block],
