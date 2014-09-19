@@ -153,8 +153,6 @@ module Jsonity
     # @block
     ###
     def array(name, options, &block)
-      ::Kernel.raise RequiredBlockError.new('No block') unless block
-
       block ||= ->(t) {}
 
       if (deferred = @deferred_array_blocks[name])
