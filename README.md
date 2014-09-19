@@ -296,6 +296,10 @@ If you set `attr_json` in any class, **the specified attributes will automatical
 ```ruby
 class Sample < Struct.new(:id, :foo, :bar)
   attr_json :id, :foo
+
+  attr_json { |sample|
+    sample.hello_from 'attr_json!'
+  }
 end
 
 @sample = Sample.new 123, 'foo!', 'bar!!'
@@ -311,7 +315,8 @@ Jsonity.build { |t|
 {
   "sample": {
     "id": 123,
-    "foo": "foo!"
+    "foo": "foo!",
+    "hello_from": "attr_json!"
   }
 }
 =end
@@ -322,7 +327,7 @@ Still you can create any kinds of nodes with a block:
 ```ruby
 Jsonity.build { |t|
   t.sample!(@sample) { |sample|
-    sample.bar { |bar| "this is #{bar}" }
+    sample.bar { |s| "this is #{s.bar}" }
   }
 }
 =begin
@@ -330,6 +335,7 @@ Jsonity.build { |t|
   "sample": {
     "id": 123,
     "foo": "foo!",
+    "hello_from": "attr_json!",
     "bar": "this is bar!!"
   }
 }

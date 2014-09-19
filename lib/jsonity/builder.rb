@@ -15,11 +15,15 @@ module Jsonity
       builder = new object, content
 
       if object.respond_to? :json_attributes
-        object.json_attributes.each { |a| builder.__send__ :attribute, a, nil }
+        object.json_attributes.each { |a| builder.__send__(:attribute, a, {}) }
+      end
+
+      if object.respond_to? :json_attribute_blocks
+        object.json_attribute_blocks.each { |b| builder.(&b) }
       end
 
       builder.(&block)
-      builder.__send__ :content
+      builder._content
     end
 
     ###
@@ -64,6 +68,16 @@ module Jsonity
       end
     end
 
+    ###
+    # Getter for `@content`
+    #
+    # @return {Hash | nil}
+    ###
+    def _content
+      evaluate_array_blocks!
+      @content
+    end
+
 
   private
 
@@ -75,7 +89,7 @@ module Jsonity
       is_object = name.match OBJECT_SUFFIX
       name, is_object = name[0..-2], is_object[0] if is_object
 
-      options = args.last.is_a?(::Hash) ? args.pop : {}
+      options = args.last.is_a?(::Hash) ? args.pop.dup : {}
       options[:_object] = args[0]
       options[:_nullable] = ('?' == is_object)
 
@@ -99,16 +113,6 @@ module Jsonity
     end
 
     ###
-    # Getter for `@content`
-    #
-    # @return {Hash | nil}
-    ###
-    def content
-      evaluate_array_blocks!
-      @content
-    end
-
-    ###
     # Create attribute node
     #
     # @params {String} name
@@ -118,7 +122,7 @@ module Jsonity
     def attribute(name, options, &block)
       obj = get_object_for name, options
 
-      @content[name] = block ? block_call(block, obj || @object) : obj
+      @content[name] = block ? block_call(block, options[:_object] || @object) : obj
     end
 
     ###
@@ -196,14 +200,14 @@ module Jsonity
     # Get object
     #
     # @params {String} name
-    # @params {Hash} options - [optional]
+    # @params {Hash} options
     #
     # @return {any}
     ###
-    def get_object_for(name, options = nil)
-      if options && options[:_object]
+    def get_object_for(name, options)
+      if options[:_object]
         options[:_object]
-      elsif options && options[:inherit]
+      elsif options[:inherit]
         @object
       elsif @object.respond_to? name
         @object.public_send name
