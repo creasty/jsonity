@@ -225,7 +225,7 @@ module Jsonity
     def block_call(block, *args)
       ::Kernel.raise RequiredBlockError.new('No block') unless block
 
-      block.call *args.first(block.arity)
+      block.call *args.first(block.arity.abs)
     end
 
   end
