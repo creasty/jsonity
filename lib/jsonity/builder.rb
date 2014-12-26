@@ -256,9 +256,18 @@ module Jsonity
     # @params {Object} obj
     ###
     def on_condition(options, obj = @object)
+      o_if, o_unless = options[:if], options[:unless]
+
       flag = true
-      flag &&= block_call(options[:if], obj) if options[:if]
-      flag &&= !block_call(options[:unless], obj) if options[:unless]
+
+      unless o_if.nil?
+        flag &&= o_if.is_a?(::Proc) ? block_call(o_if, obj) : o_if
+      end
+
+      unless o_unless.nil?
+        flag &&= !(o_unless.is_a?(::Proc) ? block_call(o_unless, obj) : o_unless)
+      end
+
       flag
     end
 
