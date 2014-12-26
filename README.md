@@ -435,19 +435,35 @@ Notice that two objects `meta!` got merged.
 ```
 
 
-### Using data object
+### Conditional
 
-You can get the data object as a second block parameter.
+You can use `if:` and `unless:` options.
 
 ```ruby
 Jsonity.build { |t|
-  t[].people!(@people) { |person, person_obj|
-    unless person_obj.private_member?
-      person.name
-      person.age
-    end
+  t[].people!(@people) { |person|
+    # if:
+    person.cv!(if: &:looking_for_job?) { |cv|
+      cv.title
+      cv.download_link
+    }
 
-    person.cv if person_obj.looking_for_job?
+    # unless:
+    person.name unless: &:anonymous?
+  }
+}
+```
+
+
+### Getting data object
+
+You can get the data object by calling `get`.
+
+```ruby
+Jsonity.build { |t|
+  t[].people!(@people) { |person|
+    # debugging object
+    p person.get
   }
 }
 ```

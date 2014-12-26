@@ -4,11 +4,11 @@ module Jsonity
     ###
     # Build Jsonity
     #
-    # @params {any} object - [optional]
-    # @params {Hash | nil} content - [optional]
+    # @params {Object} object - [optional]
+    # @params {Hash<Object, Object> | nil} content - [optional]
     # @block
     #
-    # @return {Hash} - json object
+    # @return {Hash<String, Object>} - json object
     ###
     def self.build(object = nil, content = nil, &block)
       content = {} unless content.is_a?(::Hash)
@@ -29,8 +29,8 @@ module Jsonity
     ###
     # Initializer
     #
-    # @params {any} object
-    # @params {Hash | nil} content
+    # @params {Object} object
+    # @params {Hash<Object, Object> | nil} content
     ###
     def initialize(object, content)
       @object, @content = object, content
@@ -39,9 +39,20 @@ module Jsonity
 
     ###
     # Set `obj` for the object
+    #
+    # @return {Object}
     ###
     def <=(obj)
       @object = obj
+    end
+
+    ###
+    # Get the object
+    #
+    # @return {Object}
+    ###
+    def get
+      @object
     end
 
     ###
@@ -57,21 +68,21 @@ module Jsonity
     ###
     # Mixin / Scoping
     #
-    # @params {any} obj - [optional]
+    # @params {Object} obj - [optional]
     # @block
     ###
     def call(obj = nil, &block)
       if obj
         Builder.build obj, @content, &block
       else
-        block_call block, self, @object
+        block_call block, self
       end
     end
 
     ###
     # Getter for `@content`
     #
-    # @return {Hash | nil}
+    # @return {Hash<Object, Object> | nil}
     ###
     def _content
       evaluate_array_blocks!
@@ -83,6 +94,10 @@ module Jsonity
 
     ###
     # Handle ghost methods
+    #
+    # @params {Symbol} name
+    # @params {Array<Object>} args
+    # @block block - [optional]
     ###
     def method_missing(name, *args, &block)
       name = name.to_s
@@ -116,10 +131,12 @@ module Jsonity
     # Create attribute node
     #
     # @params {String} name
-    # @params {Hash} options
-    # @block - [optional]
+    # @params {Hash<Symbol, Object>} options
+    # @block block - [optional]
     ###
     def attribute(name, options, &block)
+      return unless on_condition options
+
       obj = get_object_for name, options
 
       value = block ? block_call(block, options[:_object] || @object) : obj
@@ -130,10 +147,12 @@ module Jsonity
     # Create hash node
     #
     # @params {String} name
-    # @params {Hash} options
-    # @block - [optional]
+    # @params {Hash<Symbol, Object>} options
+    # @block block - [optional]
     ###
     def hash(name, options, &block)
+      return unless on_condition options
+
       obj = get_object_for name, options
 
       if options[:_nullable] && !obj
@@ -149,10 +168,12 @@ module Jsonity
     # Create array node
     #
     # @params {String} name
-    # @params {Hash} options
-    # @block
+    # @params {Hash<Symbol, Object>} options
+    # @block block - [optional]
     ###
     def array(name, options, &block)
+      return unless on_condition options
+
       block ||= ->(t) {}
 
       if (deferred = @deferred_array_blocks[name])
@@ -200,9 +221,9 @@ module Jsonity
     # Get object
     #
     # @params {String} name
-    # @params {Hash} options
+    # @params {Hash<Symbol, Object>} options
     #
-    # @return {any}
+    # @return {Object}
     ###
     def get_object_for(name, options)
       if options[:_object]
@@ -218,14 +239,27 @@ module Jsonity
     # Arity safe proc call
     #
     # @params {Proc} block
-    # @params {[any]} *args
+    # @params {Array<Object>} *args
     #
-    # @return {any}
+    # @return {Object}
     ###
     def block_call(block, *args)
       ::Kernel.raise RequiredBlockError.new('No block') unless block
 
       block.call *args.first(block.arity.abs)
+    end
+
+    ###
+    # On condition
+    #
+    # @params {Hash<Symbol, Object>} options
+    # @params {Object} obj
+    ###
+    def on_condition(options, obj = @object)
+      flag = true
+      flag &&= block_call(options[:if], obj) if options[:if]
+      flag &&= !block_call(options[:unless], obj) if options[:unless]
+      flag
     end
 
   end
